@@ -28,13 +28,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Fetch latest n8n response
-$n8nResponse = null;
-$result = $conn->query("SELECT data FROM n8n_responses ORDER BY id DESC LIMIT 1");
-if ($result && $row = $result->fetch_assoc()) {
-    $n8nResponse = json_decode($row['data'], true);
-}
-
 
 $conn->close();
 ?>
