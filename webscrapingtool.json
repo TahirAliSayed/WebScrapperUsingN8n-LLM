@@ -1,0 +1,225 @@
+{
+  "name": "webscrapingtool",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "url",
+          "mode": "list",
+          "cachedResultName": "url"
+        },
+        "limit": 1,
+        "sort": {
+          "values": [
+            {
+              "column": "id",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "options": {
+          "largeNumbersOutput": "text"
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        -368,
+        -32
+      ],
+      "id": "b33e48cc-bdba-4107-8c32-3f1225c17af5",
+      "name": "Select rows from a table",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "NInnLfwOjXxFl8w5",
+          "name": "webscrapper"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9ec7131e-01de-4501-8959-9cccd19d1d12",
+              "name": "links",
+              "value": "={{ $json.links }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        -32
+      ],
+      "id": "5f67a62e-ca21-43fe-a608-2aa5c9e013b0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a business information assistant. I will provide you with a business website URL in the variable {{ $json.links }}.\n\nYour task:\n1. Visit the website (or use your knowledge about the company if the website cannot be accessed).\n2. Summarize concisely the following sections:\n   - About Us (what the company does, its purpose/mission)\n   - Values (core values, principles, culture)\n   - Contact Details (email, phone, address, contact page link if available)\n3. Output only the result in clean JSON format as shown below:\n\n{\n  \"about_us\": \"...\",\n  \"values\": \"...\",\n  \"contact_details\": {\n    \"email\": \"...\",\n    \"phone\": \"...\",\n    \"address\": \"...\",\n    \"contact_page\": \"...\"\n  }\n}\n\nIf some fields are missing or unknown, return them as null. Do not add any extra text outside the JSON.\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "4812a311-1975-4548-8511-c85529d2bbee",
+      "name": "Basic LLM Chain",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost/WebScrapperUsingn8nandLLM/Backend/n8n_responses.php",
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ $json.text }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        0
+      ],
+      "id": "23cfa954-5048-4917-a155-e54f1c8c6ee5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "db53f19c-471c-43a5-a426-a1f40b8fbfdd",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -544,
+        -32
+      ],
+      "id": "b2311fe8-88a9-4c1b-b648-f40a84946ca9",
+      "name": "Webhook",
+      "webhookId": "db53f19c-471c-43a5-a426-a1f40b8fbfdd"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        176
+      ],
+      "id": "894e85b9-3384-4506-94f1-5a2c72f063ca",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "9ZuiXY1mOsyirGb0",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        304,
+        -192
+      ],
+      "id": "1749acba-ddd3-4e3b-b911-a907151a01c3",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1f76ff7c-743c-4a5b-8fd0-496b917416e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "045ea950f9832a521f581f64d7b030f51869ed22f6d646750785adea249ccf0a"
+  },
+  "id": "x6LGqHMq4vxOXTQ6",
+  "tags": []
+}
